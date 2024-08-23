@@ -1,16 +1,20 @@
 package main
 
 import (
+	"example/main/controller"
 	"example/main/handlers"
 	"example/main/middleware"
 	"fmt"
+	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	godotenv.Load()
 	fmt.Println("Starting the application")
-	collection := GetCollection()
+	collection := controller.GetCollection()
 	fmt.Println(collection)
 	r := gin.Default()
 
@@ -30,5 +34,5 @@ func main() {
 		// Protected routes here
 	}
 
-	r.Run(":8080")
+	r.Run(os.Getenv("PORT"))
 }

@@ -4,18 +4,20 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const connectionUrl = "mongodb://localhost:27017"
-const dbName = "testingdb"
-const collectionName = "testingcollection"
+var connectionUrl = os.Getenv("MONGOURI")
+var dbName = os.Getenv("DBNAME")
+var collectionName = os.Getenv("COLLECTIONNAME")
 
 var collection *mongo.Collection
 
 func init() {
+	fmt.Println("url", connectionUrl)
 	clientOption := options.Client().ApplyURI(connectionUrl)
 
 	client, err := mongo.Connect(context.TODO(), clientOption)
