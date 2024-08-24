@@ -34,5 +34,9 @@ func main() {
 		// Protected routes here
 	}
 
-	r.Run(os.Getenv("PORT"))
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8000" // Default port
+	}
+	r.Run(":" + port)
 }

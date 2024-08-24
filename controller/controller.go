@@ -6,17 +6,25 @@ import (
 	"log"
 	"os"
 
+	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var connectionUrl = os.Getenv("MONGOURI")
-var dbName = os.Getenv("DBNAME")
-var collectionName = os.Getenv("COLLECTIONNAME")
-
 var collection *mongo.Collection
 
 func init() {
+	// Load environment variables
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
+
+	// Get environment variables
+	connectionUrl := os.Getenv("MONGOURI")
+	dbName := os.Getenv("DBNAME")
+	collectionName := os.Getenv("COLLECTIONNAME")
+
 	fmt.Println("url", connectionUrl)
 	clientOption := options.Client().ApplyURI(connectionUrl)
 
@@ -25,9 +33,10 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("MongoDb Connection Sucessfully")
+	fmt.Println("MongoDb Connection Successfully Established")
 	collection = client.Database(dbName).Collection(collectionName)
 }
+
 func GetCollection() *mongo.Collection {
 	return collection
 }
