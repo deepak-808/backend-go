@@ -29,7 +29,7 @@ func main() {
 
 	// Protected routes (require authentication)
 	protectedRoutes := r.Group("/protected")
-	protectedRoutes.Use(middleware.AuthenticationMiddleware())
+	protectedRoutes.Use(middleware.AuthMiddleware())
 	{
 		// Protected routes here
 	}
