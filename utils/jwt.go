@@ -1,45 +1,48 @@
 package utils
 
 import (
-	"fmt"
+	"os"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"golang.org/x/crypto/bcrypt"
 )
 
-var secretKey = []byte("secretpassword")
+var jwtKey []byte
 
-// GenerateToken generates a JWT token with the user ID as part of the claims
-func GenerateToken(userID uint) (string, error) {
-	claims := jwt.MapClaims{}
-	claims["user_id"] = userID
-	claims["exp"] = time.Now().Add(time.Hour * 1).Unix() // Token valid for 1 hour
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(secretKey)
+// init loads environment variables and sets up the JWT key
+func init() {
+	jwtSecretKey := os.Getenv("JWT_SECRET_KEY")
+	if jwtSecretKey == "" {
+		panic("JWT_SECRET_KEY is not set in the environment variables")
+	}
+	jwtKey = []byte(jwtSecretKey)
 }
 
-// VerifyToken verifies a token JWT validate
-func VerifyToken(tokenString string) (jwt.MapClaims, error) {
-	// Parse the token
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		// Check the signing method
-		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("invalid signing method")
-		}
+// GetJwtKey returns the JWT secret key
+func GetJwtKey() []byte {
+	return jwtKey
+}
 
-		return secretKey, nil
-	})
-
-	// Check for errors
-	if err != nil {
-		return nil, err
+// GenerateToken generates a JWT token for the given user ID
+func GenerateToken(userID string) (string, error) {
+	claims := &jwt.StandardClaims{
+		ExpiresAt: time.Now().Add(24 * time.Hour).Unix(), // Token expiration time
+		Subject:   userID,
 	}
 
-	// Validate the token
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		return claims, nil
-	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(jwtKey)
+}
 
-	return nil, fmt.Errorf("invalid token")
+// HashPassword hashes a plaintext password using bcrypt
+func HashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return string(bytes), err
+}
+
+// CheckPassword compares a hashed password with a plaintext password
+func CheckPassword(providedPassword, storedPassword string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(storedPassword), []byte(providedPassword))
+	return err == nil
 }

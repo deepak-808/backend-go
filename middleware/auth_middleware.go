@@ -1,41 +1,74 @@
 package middleware
 
 import (
-	"example/main/utils"
+	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
+	"example/main/utils" // Replace with your actual module path
+
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
 
-// AuthenticationMiddleware checks if the user has a valid JWT token
-func AuthenticationMiddleware() gin.HandlerFunc {
+// AuthMiddleware verifies the JWT token
+func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		tokenString := c.GetHeader("Authorization")
-		if tokenString == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing authentication token"})
+		// Get the token from the Authorization header
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
 			c.Abort()
 			return
 		}
 
-		// The token should be prefixed with "Bearer "
-		tokenParts := strings.Split(tokenString, " ")
-		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authentication token"})
+		// Extract the token from the "Bearer <token>" format
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		if tokenString == authHeader {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization token required"})
 			c.Abort()
 			return
 		}
 
-		tokenString = tokenParts[1]
+		// Parse and validate the token
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			// Ensure that the signing method is HMAC
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
+			// Return the secret key
+			return utils.GetJwtKey(), nil
+		})
 
-		claims, err := utils.VerifyToken(tokenString)
-		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authentication token"})
+		// Handle parsing and validation errors
+		if err != nil || !token.Valid {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			c.Abort()
 			return
 		}
 
-		c.Set("user_id", claims["user_id"])
+		// Optionally, check claims (e.g., expiration, audience, etc.)
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if ok && token.Valid {
+			// Example: check the expiration
+			if exp, ok := claims["exp"].(float64); ok {
+				if int64(exp) < time.Now().Unix() {
+					c.JSON(http.StatusUnauthorized, gin.H{"error": "Token expired"})
+					c.Abort()
+					return
+				}
+			}
+
+			// Set user ID or other claims in the context
+			c.Set("userID", claims["sub"])
+		} else {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+			c.Abort()
+			return
+		}
+
+		// Pass on to the next handler
 		c.Next()
 	}
 }

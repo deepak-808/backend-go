@@ -1,7 +1,7 @@
 package main
 
 import (
-	"example/main/controller"
+	controller "example/main/db"
 	"example/main/handlers"
 	"example/main/middleware"
 	"fmt"
@@ -20,11 +20,11 @@ func main() {
 
 	// Public routes (do not require authentication)
 	publicRoutes := r.Group("/public")
-	commonRoutes := r.Group("/")
+	// commonRoutes := r.Group("/")
 	{
 		publicRoutes.POST("/login", handlers.Login)
 		publicRoutes.POST("/register", handlers.Register)
-		commonRoutes.GET("/", handlers.Getdata)
+		// commonRoutes.GET("/", handlers.Getdata)
 	}
 
 	// Protected routes (require authentication)
