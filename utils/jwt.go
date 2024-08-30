@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -12,6 +13,7 @@ var jwtKey []byte
 
 // init loads environment variables and sets up the JWT key
 func init() {
+	godotenv.Load()
 	jwtSecretKey := os.Getenv("JWT_SECRET_KEY")
 	if jwtSecretKey == "" {
 		panic("JWT_SECRET_KEY is not set in the environment variables")

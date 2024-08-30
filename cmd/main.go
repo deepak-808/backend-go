@@ -19,7 +19,7 @@ func main() {
 	r := gin.Default()
 
 	// Public routes (do not require authentication)
-	publicRoutes := r.Group("/public")
+	publicRoutes := r.Group("/api")
 	// commonRoutes := r.Group("/")
 	{
 		publicRoutes.POST("/login", handlers.Login)
@@ -28,10 +28,10 @@ func main() {
 	}
 
 	// Protected routes (require authentication)
-	protectedRoutes := r.Group("/protected")
+	protectedRoutes := publicRoutes.Group("/")
 	protectedRoutes.Use(middleware.AuthMiddleware())
 	{
-		// Protected routes here
+		protectedRoutes.POST("/profile", handlers.GetProfile)
 	}
 
 	port := os.Getenv("PORT")

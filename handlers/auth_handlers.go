@@ -41,9 +41,9 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
-
 	// Generate a JWT token
-	token, err := utils.GenerateToken(user.ID.Hex())
+	userId := user.ID
+	token, err := utils.GenerateToken(userId.Hex())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating token"})
 		return
@@ -51,7 +51,7 @@ func Login(c *gin.Context) {
 
 	data := gin.H{
 		"token": token,
-		"user":  user,
+		"id":    user.ToDTO().ID,
 	}
 
 	// Respond with the JWT token and user data

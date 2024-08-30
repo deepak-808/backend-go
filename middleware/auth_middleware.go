@@ -10,6 +10,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // AuthMiddleware verifies the JWT token
@@ -59,9 +60,24 @@ func AuthMiddleware() gin.HandlerFunc {
 					return
 				}
 			}
+			// Safely handle the "Subject" claim
+			sub, ok := claims["sub"].(string)
+			if !ok {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+				c.Abort()
+				return
+			}
+
+			// Convert "Subject" claim to MongoDB ObjectID
+			objectId, err := primitive.ObjectIDFromHex(sub)
+			if err != nil {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
+				c.Abort()
+				return
+			}
 
 			// Set user ID or other claims in the context
-			c.Set("userID", claims["sub"])
+			c.Set("userID", objectId)
 		} else {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
 			c.Abort()
